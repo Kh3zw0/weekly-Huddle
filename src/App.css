@@ -216,3 +216,50 @@ textarea {
   font-size: 12px;
   color: var(--text);
 }
+
+.muted {
+  color: var(--text);
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.safety-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 8px;
+}
+
+.safety-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.safety-day select {
+  width: 100%;
+  padding: 4px;
+  font-size: 12px;
+}
+
+.reference-card h3 {
+  margin: 16px 0 8px;
+  font-size: 15px;
+  color: var(--text-h);
+}
+
+.agenda-list {
+  margin: 0 0 8px;
+  padding-left: 20px;
+}
+
+.agenda-list li {
+  margin-bottom: 4px;
+}

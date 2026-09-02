@@ -35,13 +35,17 @@ export default function ReportHistory({ refreshKey }) {
       supabase.from('network_availability').select('*, network_sites(name)').eq('report_id', selectedId),
       supabase.from('phishing_simulations').select('*').eq('report_id', selectedId).maybeSingle(),
       supabase.from('cyber_safe_scores').select('*').eq('report_id', selectedId),
-    ]).then(([sd, breaches, network, phishing, cyber]) => {
+      supabase.from('wellness_checkins').select('*, team_members(name)').eq('report_id', selectedId),
+      supabase.from('l1_feedback').select('*').eq('report_id', selectedId),
+    ]).then(([sd, breaches, network, phishing, cyber, wellness, l1]) => {
       setDetail({
         serviceDesk: sd.data,
         breaches: breaches.data || [],
         network: network.data || [],
         phishing: phishing.data,
         cyber: cyber.data || [],
+        wellness: wellness.data || [],
+        l1: l1.data || [],
       })
       setDetailLoading(false)
     })
@@ -171,6 +175,32 @@ export default function ReportHistory({ refreshKey }) {
                     {detail.cyber.map((c) => (
                       <li key={c.id}>
                         {c.category}: {c.score ?? '—'}% {c.notes ? `— ${c.notes}` : ''}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {detail.wellness.length > 0 && (
+                <div className="detail-section">
+                  <h3>Wellness - Team Check-in</h3>
+                  <ul>
+                    {detail.wellness.map((w) => (
+                      <li key={w.id}>
+                        {w.team_members?.name}: {w.overall_checkin || '—'} / {w.mental_health_checkin || '—'}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {detail.l1.length > 0 && (
+                <div className="detail-section">
+                  <h3>L1 Feedback</h3>
+                  <ul>
+                    {detail.l1.map((f) => (
+                      <li key={f.id}>
+                        <strong>{f.area}:</strong> {f.notes}
                       </li>
                     ))}
                   </ul>
