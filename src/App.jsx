@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import NewReportForm from './components/NewReportForm'
 import ReportHistory from './components/ReportHistory'
+import ingrainLogo from './assets/ingrain-logo.png'
 import './App.css'
 
 function App() {
@@ -10,8 +11,11 @@ function App() {
   return (
     <div className="app-shell">
       <header className="app-header">
-        <h1>Ingrain IT Huddle</h1>
-        <p className="subtitle">Weekly service desk, network and security huddle tracker</p>
+        <img src={ingrainLogo} alt="Ingrain" className="app-logo" />
+        <div>
+          <h1>IT Huddle</h1>
+          <p className="subtitle">Weekly service desk, network and security huddle tracker</p>
+        </div>
       </header>
 
       <nav className="tabs">

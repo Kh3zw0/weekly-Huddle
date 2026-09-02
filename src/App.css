@@ -4,6 +4,18 @@
   box-sizing: border-box;
 }
 
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.app-logo {
+  height: 40px;
+  width: auto;
+  flex-shrink: 0;
+}
+
 .app-header h1 {
   margin: 8px 0 4px;
   font-size: 32px;
