@@ -13,7 +13,7 @@ const defaultL1Feedback = L1_FEEDBACK_AREAS.map((area) => ({ area, notes: '' }))
 
 const STEPS = [
   { id: 'details', label: 'Report Details' },
-  { id: 'safety', label: 'Safety Cross' },
+  { id: 'safety', label: 'Safety Check' },
   { id: 'checkin', label: 'Team Check-in' },
   { id: 'servicedesk', label: 'Service Desk' },
   { id: 'network', label: 'SLA & Network' },

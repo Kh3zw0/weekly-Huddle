@@ -94,11 +94,11 @@ export default function SafetyCrossSection() {
     }
   }, [statuses, improvements])
 
-  if (loading) return <section className="card"><h2>Safety Cross</h2><p>Loading…</p></section>
+  if (loading) return <section className="card"><h2>Safety Check</h2><p>Loading…</p></section>
 
   return (
     <section className="card">
-      <h2>People - Safety (Safety Cross)</h2>
+      <h2>People - Safety (Safety Check)</h2>
       {error && <div className="banner banner-error">{error}</div>}
       <p className="muted">Target: 0 accidents, 0 near misses, 2 improvements per month.</p>
 
@@ -150,7 +150,7 @@ export default function SafetyCrossSection() {
       </div>
 
       <button type="button" className="btn-primary" style={{ marginTop: 16 }} onClick={saveStatuses} disabled={saving}>
-        {saving ? 'Saving…' : 'Save Safety Cross'}
+        {saving ? 'Saving…' : 'Save Safety Check'}
       </button>
     </section>
   )
