@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { CYBER_SAFE_CATEGORIES, L1_FEEDBACK_AREAS, SERVICE_DESK_FIELDS } from '../lib/constants'
 import { uploadSectionScreenshots } from '../lib/screenshots'
+import { nextHuddleDateISO, defaultReportingPeriod } from '../lib/dates'
 import SafetyCrossSection from './SafetyCrossSection'
 import TeamCheckinSection from './TeamCheckinSection'
 import L1FeedbackSection from './L1FeedbackSection'
@@ -22,17 +23,16 @@ const STEPS = [
   { id: 'l1', label: 'L1 Feedback' },
 ]
 
-function todayISO() {
-  return new Date().toISOString().slice(0, 10)
-}
+const defaultHuddleDate = nextHuddleDateISO()
+const defaultPeriod = defaultReportingPeriod(defaultHuddleDate)
 
 export default function NewReportForm({ onSaved }) {
   const [step, setStep] = useState(0)
   const [sites, setSites] = useState([])
   const [teamMembers, setTeamMembers] = useState([])
-  const [reportDate, setReportDate] = useState(todayISO())
-  const [periodStart, setPeriodStart] = useState('')
-  const [periodEnd, setPeriodEnd] = useState('')
+  const [reportDate, setReportDate] = useState(defaultHuddleDate)
+  const [periodStart, setPeriodStart] = useState(defaultPeriod.start)
+  const [periodEnd, setPeriodEnd] = useState(defaultPeriod.end)
   const [notes, setNotes] = useState('')
 
   const [serviceDesk, setServiceDesk] = useState(emptyServiceDesk)
@@ -238,9 +238,11 @@ export default function NewReportForm({ onSaved }) {
 
       setSuccess(true)
       setStep(0)
-      setReportDate(todayISO())
-      setPeriodStart('')
-      setPeriodEnd('')
+      const nextDefaultDate = nextHuddleDateISO()
+      const nextDefaultPeriod = defaultReportingPeriod(nextDefaultDate)
+      setReportDate(nextDefaultDate)
+      setPeriodStart(nextDefaultPeriod.start)
+      setPeriodEnd(nextDefaultPeriod.end)
       setNotes('')
       setServiceDesk(emptyServiceDesk)
       setBreaches([{ technician: '', breach_count: '' }])

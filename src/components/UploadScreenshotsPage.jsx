@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { uploadSectionScreenshots, screenshotPublicUrl } from '../lib/screenshots'
 import { DEPARTMENTS, getDepartmentInfo, getDepartmentSession, loginDepartment, logoutDepartment } from '../lib/deptAuth'
+import { nextHuddleDateISO, defaultReportingPeriod } from '../lib/dates'
 import ScreenshotUploader from './ScreenshotUploader'
 
 const SECTION_LABELS = {
@@ -10,8 +11,10 @@ const SECTION_LABELS = {
   network: 'Network Availability',
 }
 
-function todayISO() {
-  return new Date().toISOString().slice(0, 10)
+function defaultNewReport() {
+  const huddleDate = nextHuddleDateISO()
+  const { start, end } = defaultReportingPeriod(huddleDate)
+  return { report_date: huddleDate, period_start: start, period_end: end }
 }
 
 function LoginForm({ onLoggedIn }) {
@@ -69,7 +72,7 @@ export default function UploadScreenshotsPage() {
   const [reports, setReports] = useState([])
   const [selectedReportId, setSelectedReportId] = useState('')
   const [creatingNew, setCreatingNew] = useState(false)
-  const [newReport, setNewReport] = useState({ report_date: todayISO(), period_start: '', period_end: '' })
+  const [newReport, setNewReport] = useState(defaultNewReport)
   const [pending, setPending] = useState({})
   const [existing, setExisting] = useState({})
   const [saving, setSaving] = useState(false)
@@ -209,7 +212,15 @@ export default function UploadScreenshotsPage() {
                 ))}
               </select>
             </label>
-            <button type="button" className="btn-secondary" style={{ marginTop: 12 }} onClick={() => setCreatingNew(true)}>
+            <button
+              type="button"
+              className="btn-secondary"
+              style={{ marginTop: 12 }}
+              onClick={() => {
+                setNewReport(defaultNewReport())
+                setCreatingNew(true)
+              }}
+            >
               + Create new huddle
             </button>
           </>
@@ -222,7 +233,11 @@ export default function UploadScreenshotsPage() {
                 <input
                   type="date"
                   value={newReport.report_date}
-                  onChange={(e) => setNewReport((r) => ({ ...r, report_date: e.target.value }))}
+                  onChange={(e) => {
+                    const report_date = e.target.value
+                    const { start, end } = defaultReportingPeriod(report_date)
+                    setNewReport((r) => ({ ...r, report_date, period_start: start, period_end: end }))
+                  }}
                   required
                 />
               </label>
