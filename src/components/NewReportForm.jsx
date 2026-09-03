@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
-import { CYBER_SAFE_CATEGORIES, L1_FEEDBACK_AREAS, SERVICE_DESK_FIELDS } from '../lib/constants'
+import { CYBER_SAFE_CATEGORIES, L1_FEEDBACK_AREAS } from '../lib/constants'
 import { uploadSectionScreenshots } from '../lib/screenshots'
 import { nextHuddleDateISO, defaultReportingPeriod } from '../lib/dates'
 import SafetyCrossSection from './SafetyCrossSection'
@@ -8,8 +8,8 @@ import TeamCheckinSection from './TeamCheckinSection'
 import L1FeedbackSection from './L1FeedbackSection'
 import AgendaReference from './AgendaReference'
 import ScreenshotUploader from './ScreenshotUploader'
+import ScreenshotPlaceholder from './ScreenshotPlaceholder'
 
-const emptyServiceDesk = Object.fromEntries(SERVICE_DESK_FIELDS.map((f) => [f.key, '']))
 const defaultL1Feedback = L1_FEEDBACK_AREAS.map((area) => ({ area, notes: '' }))
 
 const STEPS = [
@@ -28,16 +28,13 @@ const defaultPeriod = defaultReportingPeriod(defaultHuddleDate)
 
 export default function NewReportForm({ onSaved }) {
   const [step, setStep] = useState(0)
-  const [sites, setSites] = useState([])
   const [teamMembers, setTeamMembers] = useState([])
   const [reportDate, setReportDate] = useState(defaultHuddleDate)
   const [periodStart, setPeriodStart] = useState(defaultPeriod.start)
   const [periodEnd, setPeriodEnd] = useState(defaultPeriod.end)
   const [notes, setNotes] = useState('')
 
-  const [serviceDesk, setServiceDesk] = useState(emptyServiceDesk)
   const [breaches, setBreaches] = useState([{ technician: '', breach_count: '' }])
-  const [network, setNetwork] = useState({})
   const [phishing, setPhishing] = useState({
     campaign_name: '',
     link_clicked: '',
@@ -50,22 +47,13 @@ export default function NewReportForm({ onSaved }) {
   )
   const [wellness, setWellness] = useState({})
   const [l1Feedback, setL1Feedback] = useState(defaultL1Feedback)
-  const [serviceDeskShots, setServiceDeskShots] = useState([])
   const [slaShots, setSlaShots] = useState([])
-  const [networkShots, setNetworkShots] = useState([])
 
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(false)
 
   useEffect(() => {
-    supabase
-      .from('network_sites')
-      .select('id, name')
-      .order('name')
-      .then(({ data, error }) => {
-        if (!error && data) setSites(data)
-      })
     supabase
       .from('team_members')
       .select('id, name')
@@ -86,10 +74,6 @@ export default function NewReportForm({ onSaved }) {
 
   function removeBreachRow(index) {
     setBreaches((rows) => rows.filter((_, i) => i !== index))
-  }
-
-  function updateNetwork(siteId, field, value) {
-    setNetwork((n) => ({ ...n, [siteId]: { ...n[siteId], [field]: value } }))
   }
 
   function updateWellness(memberId, field, value) {
@@ -148,18 +132,6 @@ export default function NewReportForm({ onSaved }) {
       if (reportError) throw reportError
       const reportId = report.id
 
-      const sdRow = { report_id: reportId }
-      let sdHasValue = false
-      for (const f of SERVICE_DESK_FIELDS) {
-        const v = serviceDesk[f.key]
-        sdRow[f.key] = v === '' ? null : Number(v)
-        if (v !== '') sdHasValue = true
-      }
-      if (sdHasValue) {
-        const { error: sdError } = await supabase.from('service_desk_stats').insert(sdRow)
-        if (sdError) throw sdError
-      }
-
       const breachRows = breaches
         .filter((b) => b.technician.trim() !== '')
         .map((b) => ({
@@ -170,19 +142,6 @@ export default function NewReportForm({ onSaved }) {
       if (breachRows.length > 0) {
         const { error: breachError } = await supabase.from('sla_breaches').insert(breachRows)
         if (breachError) throw breachError
-      }
-
-      const networkRows = Object.entries(network)
-        .filter(([, v]) => v && (v.inter_site !== '' || v.internet !== ''))
-        .map(([siteId, v]) => ({
-          report_id: reportId,
-          site_id: siteId,
-          inter_site_connectivity_pct: v.inter_site === '' || v.inter_site == null ? null : Number(v.inter_site),
-          direct_internet_access_pct: v.internet === '' || v.internet == null ? null : Number(v.internet),
-        }))
-      if (networkRows.length > 0) {
-        const { error: netError } = await supabase.from('network_availability').insert(networkRows)
-        if (netError) throw netError
       }
 
       const phishingHasValue = Object.values(phishing).some((v) => v !== '')
@@ -232,9 +191,7 @@ export default function NewReportForm({ onSaved }) {
         if (l1Error) throw l1Error
       }
 
-      if (serviceDeskShots.length > 0) await uploadSectionScreenshots(reportId, 'service_desk', serviceDeskShots)
       if (slaShots.length > 0) await uploadSectionScreenshots(reportId, 'sla', slaShots)
-      if (networkShots.length > 0) await uploadSectionScreenshots(reportId, 'network', networkShots)
 
       setSuccess(true)
       setStep(0)
@@ -244,9 +201,7 @@ export default function NewReportForm({ onSaved }) {
       setPeriodStart(nextDefaultPeriod.start)
       setPeriodEnd(nextDefaultPeriod.end)
       setNotes('')
-      setServiceDesk(emptyServiceDesk)
       setBreaches([{ technician: '', breach_count: '' }])
-      setNetwork({})
       setPhishing({
         campaign_name: '',
         link_clicked: '',
@@ -257,9 +212,7 @@ export default function NewReportForm({ onSaved }) {
       setCyberSafe(Object.fromEntries(CYBER_SAFE_CATEGORIES.map((c) => [c, { score: '', notes: '' }])))
       setWellness({})
       setL1Feedback(defaultL1Feedback)
-      setServiceDeskShots([])
       setSlaShots([])
-      setNetworkShots([])
       onSaved?.()
     } catch (err) {
       setError(err.message || 'Something went wrong while saving.')
@@ -325,24 +278,7 @@ export default function NewReportForm({ onSaved }) {
       {currentId === 'servicedesk' && (
         <section className="card">
           <h2>Service Desk Update</h2>
-          <div className="grid grid-5">
-            {SERVICE_DESK_FIELDS.map((f) => (
-              <label key={f.key}>
-                {f.label}
-                <input
-                  type="number"
-                  min="0"
-                  value={serviceDesk[f.key]}
-                  onChange={(e) => setServiceDesk((s) => ({ ...s, [f.key]: e.target.value }))}
-                />
-              </label>
-            ))}
-          </div>
-          <ScreenshotUploader
-            label="Service Desk screenshots (for presenting)"
-            items={serviceDeskShots}
-            onChange={setServiceDeskShots}
-          />
+          <ScreenshotPlaceholder department="Service Desk" />
         </section>
       )}
 
@@ -381,47 +317,7 @@ export default function NewReportForm({ onSaved }) {
 
           <section className="card">
             <h2>Network Availability</h2>
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Site</th>
-                  <th>Inter-Site Connectivity %</th>
-                  <th>Direct Internet Access %</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sites.map((site) => (
-                  <tr key={site.id}>
-                    <td>{site.name}</td>
-                    <td>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        max="100"
-                        value={network[site.id]?.inter_site ?? ''}
-                        onChange={(e) => updateNetwork(site.id, 'inter_site', e.target.value)}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        max="100"
-                        value={network[site.id]?.internet ?? ''}
-                        onChange={(e) => updateNetwork(site.id, 'internet', e.target.value)}
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <ScreenshotUploader
-              label="Network screenshots (for presenting)"
-              items={networkShots}
-              onChange={setNetworkShots}
-            />
+            <ScreenshotPlaceholder department="Network" />
           </section>
         </>
       )}

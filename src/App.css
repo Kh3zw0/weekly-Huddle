@@ -336,6 +336,29 @@ textarea {
   margin-top: 8px;
 }
 
+.screenshot-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  padding: 40px 24px;
+  border: 2px dashed var(--border);
+  border-radius: 10px;
+  color: var(--text);
+}
+
+.screenshot-placeholder svg {
+  color: var(--text);
+  opacity: 0.6;
+}
+
+.screenshot-placeholder p {
+  max-width: 380px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
 .screenshot-uploader {
   margin-top: 16px;
   padding-top: 16px;
