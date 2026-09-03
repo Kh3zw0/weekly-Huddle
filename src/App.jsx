@@ -12,11 +12,11 @@ function App() {
   return (
     <div className="app-shell">
       <header className="app-header">
-        <img src={ingrainLogo} alt="Ingrain" className="app-logo" />
         <div>
-          <h1>IT Huddle</h1>
+          <h1>Weekly IT Meeting</h1>
           <p className="subtitle">Weekly service desk, network and security huddle tracker</p>
         </div>
+        <img src={ingrainLogo} alt="Ingrain" className="app-logo" />
       </header>
 
       <nav className="tabs">

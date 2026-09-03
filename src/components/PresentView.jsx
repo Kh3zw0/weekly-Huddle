@@ -73,15 +73,15 @@ export default function PresentView() {
   return (
     <div className="present-shell">
       <header className="present-header">
-        <img src={ingrainLogo} alt="Ingrain" className="app-logo" />
         <div>
-          <h1>IT Huddle</h1>
+          <h1>Weekly IT Meeting</h1>
           {detail?.report && (
             <p className="subtitle">
               {detail.report.report_date} &middot; {detail.report.period_start} – {detail.report.period_end}
             </p>
           )}
         </div>
+        <img src={ingrainLogo} alt="Ingrain" className="app-logo" />
         {reports.length > 1 && (
           <select className="present-selector" value={reportId} onChange={(e) => setReportId(e.target.value)}>
             {reports.map((r) => (
