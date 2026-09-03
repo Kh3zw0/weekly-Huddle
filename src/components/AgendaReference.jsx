@@ -24,27 +24,31 @@ export default function AgendaReference() {
   }, [])
 
   return (
-    <section className="card reference-card">
-      <h2>Meeting Agenda</h2>
-      <ol className="agenda-list">
-        {AGENDA_ITEMS.map((item) => (
-          <li key={item}>{item}</li>
-        ))}
-      </ol>
-
-      <h3>Birthdays this month ({monthLabel(new Date())})</h3>
-      {birthdays.length === 0 ? (
-        <p className="muted">No birthdays recorded for this month.</p>
-      ) : (
-        <ul>
-          {birthdays.map((b) => (
-            <li key={b.name}>
-              {b.name} &mdash; {new Date(b.birthday).toLocaleDateString('en-ZA', { day: 'numeric', month: 'long' })}
-              {b.company ? ` (${b.company})` : ''}
-            </li>
+    <div className="reference-boxes">
+      <section className="brand-box">
+        <h2>Meeting Agenda</h2>
+        <ol className="agenda-list">
+          {AGENDA_ITEMS.map((item) => (
+            <li key={item}>{item}</li>
           ))}
-        </ul>
-      )}
-    </section>
+        </ol>
+      </section>
+
+      <section className="brand-box">
+        <h2>Birthdays this month ({monthLabel(new Date())})</h2>
+        {birthdays.length === 0 ? (
+          <p className="muted">No birthdays recorded for this month.</p>
+        ) : (
+          <ul>
+            {birthdays.map((b) => (
+              <li key={b.name}>
+                {b.name} &mdash; {new Date(b.birthday).toLocaleDateString('en-ZA', { day: 'numeric', month: 'long' })}
+                {b.company ? ` (${b.company})` : ''}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </div>
   )
 }
