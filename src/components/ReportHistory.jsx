@@ -1,6 +1,23 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { SERVICE_DESK_FIELDS } from '../lib/constants'
+import { screenshotPublicUrl } from '../lib/screenshots'
+
+function ScreenshotGallery({ shots }) {
+  if (!shots || shots.length === 0) return null
+  return (
+    <div className="screenshot-grid">
+      {shots.map((s) => (
+        <div className="screenshot-item" key={s.id}>
+          <a href={screenshotPublicUrl(s.storage_path)} target="_blank" rel="noreferrer">
+            <img src={screenshotPublicUrl(s.storage_path)} alt={s.caption || 'Screenshot'} />
+          </a>
+          {s.caption && <p className="screenshot-caption">{s.caption}</p>}
+        </div>
+      ))}
+    </div>
+  )
+}
 
 export default function ReportHistory({ refreshKey }) {
   const [reports, setReports] = useState([])
@@ -37,7 +54,12 @@ export default function ReportHistory({ refreshKey }) {
       supabase.from('cyber_safe_scores').select('*').eq('report_id', selectedId),
       supabase.from('wellness_checkins').select('*, team_members(name)').eq('report_id', selectedId),
       supabase.from('l1_feedback').select('*').eq('report_id', selectedId),
-    ]).then(([sd, breaches, network, phishing, cyber, wellness, l1]) => {
+      supabase.from('section_screenshots').select('*').eq('report_id', selectedId),
+    ]).then(([sd, breaches, network, phishing, cyber, wellness, l1, screenshots]) => {
+      const shotsBySection = { service_desk: [], sla: [], network: [] }
+      for (const s of screenshots.data || []) {
+        if (shotsBySection[s.section]) shotsBySection[s.section].push(s)
+      }
       setDetail({
         serviceDesk: sd.data,
         breaches: breaches.data || [],
@@ -46,6 +68,7 @@ export default function ReportHistory({ refreshKey }) {
         cyber: cyber.data || [],
         wellness: wellness.data || [],
         l1: l1.data || [],
+        shots: shotsBySection,
       })
       setDetailLoading(false)
     })
@@ -93,21 +116,24 @@ export default function ReportHistory({ refreshKey }) {
           {detailLoading && <p>Loading details…</p>}
           {detail && (
             <>
-              {detail.serviceDesk && (
+              {(detail.serviceDesk || detail.shots.service_desk.length > 0) && (
                 <div className="detail-section">
                   <h3>Service Desk</h3>
-                  <div className="stat-row">
-                    {SERVICE_DESK_FIELDS.map((f) => (
-                      <div className="stat-pill" key={f.key}>
-                        <span className="stat-value">{detail.serviceDesk[f.key] ?? '—'}</span>
-                        <span className="stat-label">{f.label}</span>
-                      </div>
-                    ))}
-                  </div>
+                  {detail.serviceDesk && (
+                    <div className="stat-row">
+                      {SERVICE_DESK_FIELDS.map((f) => (
+                        <div className="stat-pill" key={f.key}>
+                          <span className="stat-value">{detail.serviceDesk[f.key] ?? '—'}</span>
+                          <span className="stat-label">{f.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <ScreenshotGallery shots={detail.shots.service_desk} />
                 </div>
               )}
 
-              {detail.breaches.length > 0 && (
+              {(detail.breaches.length > 0 || detail.shots.sla.length > 0) && (
                 <div className="detail-section">
                   <h3>Breached SLA by Technician</h3>
                   <ul>
@@ -117,10 +143,11 @@ export default function ReportHistory({ refreshKey }) {
                       </li>
                     ))}
                   </ul>
+                  <ScreenshotGallery shots={detail.shots.sla} />
                 </div>
               )}
 
-              {detail.network.length > 0 && (
+              {(detail.network.length > 0 || detail.shots.network.length > 0) && (
                 <div className="detail-section">
                   <h3>Network Availability</h3>
                   <table className="table">
@@ -141,6 +168,7 @@ export default function ReportHistory({ refreshKey }) {
                       ))}
                     </tbody>
                   </table>
+                  <ScreenshotGallery shots={detail.shots.network} />
                 </div>
               )}
 

@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { CYBER_SAFE_CATEGORIES, L1_FEEDBACK_AREAS, SERVICE_DESK_FIELDS } from '../lib/constants'
+import { uploadSectionScreenshots } from '../lib/screenshots'
 import SafetyCrossSection from './SafetyCrossSection'
 import TeamCheckinSection from './TeamCheckinSection'
 import L1FeedbackSection from './L1FeedbackSection'
 import AgendaReference from './AgendaReference'
+import ScreenshotUploader from './ScreenshotUploader'
 
 const emptyServiceDesk = Object.fromEntries(SERVICE_DESK_FIELDS.map((f) => [f.key, '']))
 const defaultL1Feedback = L1_FEEDBACK_AREAS.map((area) => ({ area, notes: '' }))
@@ -48,6 +50,9 @@ export default function NewReportForm({ onSaved }) {
   )
   const [wellness, setWellness] = useState({})
   const [l1Feedback, setL1Feedback] = useState(defaultL1Feedback)
+  const [serviceDeskShots, setServiceDeskShots] = useState([])
+  const [slaShots, setSlaShots] = useState([])
+  const [networkShots, setNetworkShots] = useState([])
 
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
@@ -227,6 +232,10 @@ export default function NewReportForm({ onSaved }) {
         if (l1Error) throw l1Error
       }
 
+      if (serviceDeskShots.length > 0) await uploadSectionScreenshots(reportId, 'service_desk', serviceDeskShots)
+      if (slaShots.length > 0) await uploadSectionScreenshots(reportId, 'sla', slaShots)
+      if (networkShots.length > 0) await uploadSectionScreenshots(reportId, 'network', networkShots)
+
       setSuccess(true)
       setStep(0)
       setReportDate(todayISO())
@@ -246,6 +255,9 @@ export default function NewReportForm({ onSaved }) {
       setCyberSafe(Object.fromEntries(CYBER_SAFE_CATEGORIES.map((c) => [c, { score: '', notes: '' }])))
       setWellness({})
       setL1Feedback(defaultL1Feedback)
+      setServiceDeskShots([])
+      setSlaShots([])
+      setNetworkShots([])
       onSaved?.()
     } catch (err) {
       setError(err.message || 'Something went wrong while saving.')
@@ -324,6 +336,11 @@ export default function NewReportForm({ onSaved }) {
               </label>
             ))}
           </div>
+          <ScreenshotUploader
+            label="Service Desk screenshots (for presenting)"
+            items={serviceDeskShots}
+            onChange={setServiceDeskShots}
+          />
         </section>
       )}
 
@@ -353,6 +370,11 @@ export default function NewReportForm({ onSaved }) {
             <button type="button" className="btn-secondary" onClick={addBreachRow}>
               + Add technician
             </button>
+            <ScreenshotUploader
+              label="SLA screenshots (for presenting)"
+              items={slaShots}
+              onChange={setSlaShots}
+            />
           </section>
 
           <section className="card">
@@ -393,6 +415,11 @@ export default function NewReportForm({ onSaved }) {
                 ))}
               </tbody>
             </table>
+            <ScreenshotUploader
+              label="Network screenshots (for presenting)"
+              items={networkShots}
+              onChange={setNetworkShots}
+            />
           </section>
         </>
       )}
