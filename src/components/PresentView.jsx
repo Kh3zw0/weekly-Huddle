@@ -53,7 +53,7 @@ export default function PresentView() {
       supabase.from('cyber_safe_scores').select('*').eq('report_id', reportId),
       supabase.from('section_screenshots').select('*').eq('report_id', reportId),
     ]).then(([report, sd, breaches, network, phishing, cyber, screenshots]) => {
-      const shots = { service_desk: [], sla: [], network: [] }
+      const shots = { service_desk: [], sla: [], network: [], phishing: [], cyber_safe: [] }
       for (const s of screenshots.data || []) {
         if (shots[s.section]) shots[s.section].push(s)
       }
@@ -159,42 +159,48 @@ export default function PresentView() {
             </section>
           )}
 
-          {detail.phishing && (
+          {(detail.phishing || detail.shots.phishing.length > 0) && (
             <section className="present-section">
               <h2>
-                Phishing Simulation {detail.phishing.campaign_name ? `— ${detail.phishing.campaign_name}` : ''}
+                Phishing Simulation {detail.phishing?.campaign_name ? `— ${detail.phishing.campaign_name}` : ''}
               </h2>
-              <div className="stat-row">
-                <div className="stat-pill">
-                  <span className="stat-value">{detail.phishing.link_clicked ?? '—'}</span>
-                  <span className="stat-label">Link Clicked</span>
+              {detail.phishing && (
+                <div className="stat-row">
+                  <div className="stat-pill">
+                    <span className="stat-value">{detail.phishing.link_clicked ?? '—'}</span>
+                    <span className="stat-label">Link Clicked</span>
+                  </div>
+                  <div className="stat-pill">
+                    <span className="stat-value">{detail.phishing.credentials_entered ?? '—'}</span>
+                    <span className="stat-label">Credentials Entered</span>
+                  </div>
+                  <div className="stat-pill">
+                    <span className="stat-value">{detail.phishing.not_compromised ?? '—'}</span>
+                    <span className="stat-label">Not Compromised</span>
+                  </div>
+                  <div className="stat-pill">
+                    <span className="stat-value">{detail.phishing.phish_prone_pct ?? '—'}%</span>
+                    <span className="stat-label">Phish Prone</span>
+                  </div>
                 </div>
-                <div className="stat-pill">
-                  <span className="stat-value">{detail.phishing.credentials_entered ?? '—'}</span>
-                  <span className="stat-label">Credentials Entered</span>
-                </div>
-                <div className="stat-pill">
-                  <span className="stat-value">{detail.phishing.not_compromised ?? '—'}</span>
-                  <span className="stat-label">Not Compromised</span>
-                </div>
-                <div className="stat-pill">
-                  <span className="stat-value">{detail.phishing.phish_prone_pct ?? '—'}%</span>
-                  <span className="stat-label">Phish Prone</span>
-                </div>
-              </div>
+              )}
+              <PresentGallery shots={detail.shots.phishing} />
             </section>
           )}
 
-          {detail.cyber.length > 0 && (
+          {(detail.cyber.length > 0 || detail.shots.cyber_safe.length > 0) && (
             <section className="present-section">
               <h2>Cyber Safe Campaign</h2>
-              <ul>
-                {detail.cyber.map((c) => (
-                  <li key={c.id}>
-                    {c.category}: {c.score ?? '—'}% {c.notes ? `— ${c.notes}` : ''}
-                  </li>
-                ))}
-              </ul>
+              {detail.cyber.length > 0 && (
+                <ul>
+                  {detail.cyber.map((c) => (
+                    <li key={c.id}>
+                      {c.category}: {c.score ?? '—'}% {c.notes ? `— ${c.notes}` : ''}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <PresentGallery shots={detail.shots.cyber_safe} />
             </section>
           )}
         </main>

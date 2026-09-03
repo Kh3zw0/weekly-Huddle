@@ -56,7 +56,7 @@ export default function ReportHistory({ refreshKey }) {
       supabase.from('l1_feedback').select('*').eq('report_id', selectedId),
       supabase.from('section_screenshots').select('*').eq('report_id', selectedId),
     ]).then(([sd, breaches, network, phishing, cyber, wellness, l1, screenshots]) => {
-      const shotsBySection = { service_desk: [], sla: [], network: [] }
+      const shotsBySection = { service_desk: [], sla: [], network: [], phishing: [], cyber_safe: [] }
       for (const s of screenshots.data || []) {
         if (shotsBySection[s.section]) shotsBySection[s.section].push(s)
       }
@@ -172,40 +172,46 @@ export default function ReportHistory({ refreshKey }) {
                 </div>
               )}
 
-              {detail.phishing && (
+              {(detail.phishing || detail.shots.phishing.length > 0) && (
                 <div className="detail-section">
-                  <h3>Phishing Simulation {detail.phishing.campaign_name ? `— ${detail.phishing.campaign_name}` : ''}</h3>
-                  <div className="stat-row">
-                    <div className="stat-pill">
-                      <span className="stat-value">{detail.phishing.link_clicked ?? '—'}</span>
-                      <span className="stat-label">Link Clicked</span>
+                  <h3>Phishing Simulation {detail.phishing?.campaign_name ? `— ${detail.phishing.campaign_name}` : ''}</h3>
+                  {detail.phishing && (
+                    <div className="stat-row">
+                      <div className="stat-pill">
+                        <span className="stat-value">{detail.phishing.link_clicked ?? '—'}</span>
+                        <span className="stat-label">Link Clicked</span>
+                      </div>
+                      <div className="stat-pill">
+                        <span className="stat-value">{detail.phishing.credentials_entered ?? '—'}</span>
+                        <span className="stat-label">Credentials Entered</span>
+                      </div>
+                      <div className="stat-pill">
+                        <span className="stat-value">{detail.phishing.not_compromised ?? '—'}</span>
+                        <span className="stat-label">Not Compromised</span>
+                      </div>
+                      <div className="stat-pill">
+                        <span className="stat-value">{detail.phishing.phish_prone_pct ?? '—'}%</span>
+                        <span className="stat-label">Phish Prone</span>
+                      </div>
                     </div>
-                    <div className="stat-pill">
-                      <span className="stat-value">{detail.phishing.credentials_entered ?? '—'}</span>
-                      <span className="stat-label">Credentials Entered</span>
-                    </div>
-                    <div className="stat-pill">
-                      <span className="stat-value">{detail.phishing.not_compromised ?? '—'}</span>
-                      <span className="stat-label">Not Compromised</span>
-                    </div>
-                    <div className="stat-pill">
-                      <span className="stat-value">{detail.phishing.phish_prone_pct ?? '—'}%</span>
-                      <span className="stat-label">Phish Prone</span>
-                    </div>
-                  </div>
+                  )}
+                  <ScreenshotGallery shots={detail.shots.phishing} />
                 </div>
               )}
 
-              {detail.cyber.length > 0 && (
+              {(detail.cyber.length > 0 || detail.shots.cyber_safe.length > 0) && (
                 <div className="detail-section">
                   <h3>Cyber Safe Campaign</h3>
-                  <ul>
-                    {detail.cyber.map((c) => (
-                      <li key={c.id}>
-                        {c.category}: {c.score ?? '—'}% {c.notes ? `— ${c.notes}` : ''}
-                      </li>
-                    ))}
-                  </ul>
+                  {detail.cyber.length > 0 && (
+                    <ul>
+                      {detail.cyber.map((c) => (
+                        <li key={c.id}>
+                          {c.category}: {c.score ?? '—'}% {c.notes ? `— ${c.notes}` : ''}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <ScreenshotGallery shots={detail.shots.cyber_safe} />
                 </div>
               )}
 

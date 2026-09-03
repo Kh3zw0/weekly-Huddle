@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
-import { CYBER_SAFE_CATEGORIES, L1_FEEDBACK_AREAS } from '../lib/constants'
+import { L1_FEEDBACK_AREAS } from '../lib/constants'
 import { nextHuddleDateISO, defaultReportingPeriod } from '../lib/dates'
 import SafetyCrossSection from './SafetyCrossSection'
 import TeamCheckinSection from './TeamCheckinSection'
@@ -32,16 +32,6 @@ export default function NewReportForm({ onSaved }) {
   const [periodEnd, setPeriodEnd] = useState(defaultPeriod.end)
   const [notes, setNotes] = useState('')
 
-  const [phishing, setPhishing] = useState({
-    campaign_name: '',
-    link_clicked: '',
-    credentials_entered: '',
-    not_compromised: '',
-    phish_prone_pct: '',
-  })
-  const [cyberSafe, setCyberSafe] = useState(
-    Object.fromEntries(CYBER_SAFE_CATEGORIES.map((c) => [c, { score: '', notes: '' }]))
-  )
   const [wellness, setWellness] = useState({})
   const [l1Feedback, setL1Feedback] = useState(defaultL1Feedback)
 
@@ -116,32 +106,6 @@ export default function NewReportForm({ onSaved }) {
       if (reportError) throw reportError
       const reportId = report.id
 
-      const phishingHasValue = Object.values(phishing).some((v) => v !== '')
-      if (phishingHasValue) {
-        const { error: phishError } = await supabase.from('phishing_simulations').insert({
-          report_id: reportId,
-          campaign_name: phishing.campaign_name || null,
-          link_clicked: phishing.link_clicked === '' ? null : Number(phishing.link_clicked),
-          credentials_entered: phishing.credentials_entered === '' ? null : Number(phishing.credentials_entered),
-          not_compromised: phishing.not_compromised === '' ? null : Number(phishing.not_compromised),
-          phish_prone_pct: phishing.phish_prone_pct === '' ? null : Number(phishing.phish_prone_pct),
-        })
-        if (phishError) throw phishError
-      }
-
-      const cyberRows = CYBER_SAFE_CATEGORIES.filter(
-        (c) => cyberSafe[c].score !== '' || cyberSafe[c].notes !== ''
-      ).map((c) => ({
-        report_id: reportId,
-        category: c,
-        score: cyberSafe[c].score === '' ? null : Number(cyberSafe[c].score),
-        notes: cyberSafe[c].notes || null,
-      }))
-      if (cyberRows.length > 0) {
-        const { error: cyberError } = await supabase.from('cyber_safe_scores').insert(cyberRows)
-        if (cyberError) throw cyberError
-      }
-
       const wellnessRows = Object.entries(wellness)
         .filter(([, v]) => v && (v.overall || v.mental))
         .map(([memberId, v]) => ({
@@ -171,14 +135,6 @@ export default function NewReportForm({ onSaved }) {
       setPeriodStart(nextDefaultPeriod.start)
       setPeriodEnd(nextDefaultPeriod.end)
       setNotes('')
-      setPhishing({
-        campaign_name: '',
-        link_clicked: '',
-        credentials_entered: '',
-        not_compromised: '',
-        phish_prone_pct: '',
-      })
-      setCyberSafe(Object.fromEntries(CYBER_SAFE_CATEGORIES.map((c) => [c, { score: '', notes: '' }])))
       setWellness({})
       setL1Feedback(defaultL1Feedback)
       onSaved?.()
@@ -268,80 +224,12 @@ export default function NewReportForm({ onSaved }) {
         <>
           <section className="card">
             <h2>IT Security Update &mdash; Phishing Simulation</h2>
-            <div className="grid grid-3">
-              <label>
-                Campaign Name
-                <input
-                  value={phishing.campaign_name}
-                  onChange={(e) => setPhishing((p) => ({ ...p, campaign_name: e.target.value }))}
-                />
-              </label>
-              <label>
-                Link Clicked
-                <input
-                  type="number"
-                  min="0"
-                  value={phishing.link_clicked}
-                  onChange={(e) => setPhishing((p) => ({ ...p, link_clicked: e.target.value }))}
-                />
-              </label>
-              <label>
-                Credentials Entered
-                <input
-                  type="number"
-                  min="0"
-                  value={phishing.credentials_entered}
-                  onChange={(e) => setPhishing((p) => ({ ...p, credentials_entered: e.target.value }))}
-                />
-              </label>
-              <label>
-                Not Compromised
-                <input
-                  type="number"
-                  min="0"
-                  value={phishing.not_compromised}
-                  onChange={(e) => setPhishing((p) => ({ ...p, not_compromised: e.target.value }))}
-                />
-              </label>
-              <label>
-                Phish Prone %
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  max="100"
-                  value={phishing.phish_prone_pct}
-                  onChange={(e) => setPhishing((p) => ({ ...p, phish_prone_pct: e.target.value }))}
-                />
-              </label>
-            </div>
+            <ScreenshotPlaceholder department="IT Security" />
           </section>
 
           <section className="card">
             <h2>Cyber Safe Campaign</h2>
-            {CYBER_SAFE_CATEGORIES.map((c) => (
-              <div className="grid grid-inline" key={c}>
-                <span className="cyber-label">{c}</span>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  max="100"
-                  placeholder="Score %"
-                  value={cyberSafe[c].score}
-                  onChange={(e) =>
-                    setCyberSafe((s) => ({ ...s, [c]: { ...s[c], score: e.target.value } }))
-                  }
-                />
-                <input
-                  placeholder="Notes"
-                  value={cyberSafe[c].notes}
-                  onChange={(e) =>
-                    setCyberSafe((s) => ({ ...s, [c]: { ...s[c], notes: e.target.value } }))
-                  }
-                />
-              </div>
-            ))}
+            <ScreenshotPlaceholder department="IT Security" />
           </section>
         </>
       )}

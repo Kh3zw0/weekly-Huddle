@@ -9,6 +9,8 @@ const SECTION_LABELS = {
   service_desk: 'Service Desk',
   sla: 'Breached SLA by Technician',
   network: 'Network Availability',
+  phishing: 'Phishing Simulation',
+  cyber_safe: 'Cyber Safe Campaign',
 }
 
 function defaultNewReport() {
