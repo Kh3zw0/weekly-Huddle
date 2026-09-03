@@ -1,13 +1,11 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { CYBER_SAFE_CATEGORIES, L1_FEEDBACK_AREAS } from '../lib/constants'
-import { uploadSectionScreenshots } from '../lib/screenshots'
 import { nextHuddleDateISO, defaultReportingPeriod } from '../lib/dates'
 import SafetyCrossSection from './SafetyCrossSection'
 import TeamCheckinSection from './TeamCheckinSection'
 import L1FeedbackSection from './L1FeedbackSection'
 import AgendaReference from './AgendaReference'
-import ScreenshotUploader from './ScreenshotUploader'
 import ScreenshotPlaceholder from './ScreenshotPlaceholder'
 
 const defaultL1Feedback = L1_FEEDBACK_AREAS.map((area) => ({ area, notes: '' }))
@@ -34,7 +32,6 @@ export default function NewReportForm({ onSaved }) {
   const [periodEnd, setPeriodEnd] = useState(defaultPeriod.end)
   const [notes, setNotes] = useState('')
 
-  const [breaches, setBreaches] = useState([{ technician: '', breach_count: '' }])
   const [phishing, setPhishing] = useState({
     campaign_name: '',
     link_clicked: '',
@@ -47,7 +44,6 @@ export default function NewReportForm({ onSaved }) {
   )
   const [wellness, setWellness] = useState({})
   const [l1Feedback, setL1Feedback] = useState(defaultL1Feedback)
-  const [slaShots, setSlaShots] = useState([])
 
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
@@ -63,18 +59,6 @@ export default function NewReportForm({ onSaved }) {
         if (!error && data) setTeamMembers(data)
       })
   }, [])
-
-  function updateBreach(index, field, value) {
-    setBreaches((rows) => rows.map((r, i) => (i === index ? { ...r, [field]: value } : r)))
-  }
-
-  function addBreachRow() {
-    setBreaches((rows) => [...rows, { technician: '', breach_count: '' }])
-  }
-
-  function removeBreachRow(index) {
-    setBreaches((rows) => rows.filter((_, i) => i !== index))
-  }
 
   function updateWellness(memberId, field, value) {
     setWellness((w) => ({ ...w, [memberId]: { ...w[memberId], [field]: value } }))
@@ -132,18 +116,6 @@ export default function NewReportForm({ onSaved }) {
       if (reportError) throw reportError
       const reportId = report.id
 
-      const breachRows = breaches
-        .filter((b) => b.technician.trim() !== '')
-        .map((b) => ({
-          report_id: reportId,
-          technician: b.technician.trim(),
-          breach_count: b.breach_count === '' ? 0 : Number(b.breach_count),
-        }))
-      if (breachRows.length > 0) {
-        const { error: breachError } = await supabase.from('sla_breaches').insert(breachRows)
-        if (breachError) throw breachError
-      }
-
       const phishingHasValue = Object.values(phishing).some((v) => v !== '')
       if (phishingHasValue) {
         const { error: phishError } = await supabase.from('phishing_simulations').insert({
@@ -191,8 +163,6 @@ export default function NewReportForm({ onSaved }) {
         if (l1Error) throw l1Error
       }
 
-      if (slaShots.length > 0) await uploadSectionScreenshots(reportId, 'sla', slaShots)
-
       setSuccess(true)
       setStep(0)
       const nextDefaultDate = nextHuddleDateISO()
@@ -201,7 +171,6 @@ export default function NewReportForm({ onSaved }) {
       setPeriodStart(nextDefaultPeriod.start)
       setPeriodEnd(nextDefaultPeriod.end)
       setNotes('')
-      setBreaches([{ technician: '', breach_count: '' }])
       setPhishing({
         campaign_name: '',
         link_clicked: '',
@@ -212,7 +181,6 @@ export default function NewReportForm({ onSaved }) {
       setCyberSafe(Object.fromEntries(CYBER_SAFE_CATEGORIES.map((c) => [c, { score: '', notes: '' }])))
       setWellness({})
       setL1Feedback(defaultL1Feedback)
-      setSlaShots([])
       onSaved?.()
     } catch (err) {
       setError(err.message || 'Something went wrong while saving.')
@@ -286,33 +254,7 @@ export default function NewReportForm({ onSaved }) {
         <>
           <section className="card">
             <h2>Breached SLA by Technician</h2>
-            {breaches.map((row, i) => (
-              <div className="grid grid-inline" key={i}>
-                <input
-                  placeholder="Technician name"
-                  value={row.technician}
-                  onChange={(e) => updateBreach(i, 'technician', e.target.value)}
-                />
-                <input
-                  type="number"
-                  min="0"
-                  placeholder="Breaches"
-                  value={row.breach_count}
-                  onChange={(e) => updateBreach(i, 'breach_count', e.target.value)}
-                />
-                <button type="button" className="btn-ghost" onClick={() => removeBreachRow(i)}>
-                  Remove
-                </button>
-              </div>
-            ))}
-            <button type="button" className="btn-secondary" onClick={addBreachRow}>
-              + Add technician
-            </button>
-            <ScreenshotUploader
-              label="SLA screenshots (for presenting)"
-              items={slaShots}
-              onChange={setSlaShots}
-            />
+            <ScreenshotPlaceholder department="Service Desk" />
           </section>
 
           <section className="card">
