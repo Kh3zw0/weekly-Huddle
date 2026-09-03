@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import NewReportForm from './components/NewReportForm'
 import ReportHistory from './components/ReportHistory'
+import UploadScreenshotsPage from './components/UploadScreenshotsPage'
 import ingrainLogo from './assets/ingrain-logo.png'
 import './App.css'
 
@@ -33,6 +34,13 @@ function App() {
         >
           History
         </button>
+        <button
+          type="button"
+          className={tab === 'upload' ? 'tab active' : 'tab'}
+          onClick={() => setTab('upload')}
+        >
+          Upload Screenshots
+        </button>
       </nav>
 
       <main>
@@ -45,6 +53,7 @@ function App() {
           />
         )}
         {tab === 'history' && <ReportHistory refreshKey={refreshKey} />}
+        {tab === 'upload' && <UploadScreenshotsPage />}
       </main>
     </div>
   )

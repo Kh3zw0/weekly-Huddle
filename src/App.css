@@ -381,3 +381,78 @@ textarea {
   color: var(--text);
   margin: 0;
 }
+
+select {
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text-h);
+}
+
+.present-shell {
+  min-height: 100vh;
+  padding: 32px 48px 80px;
+  box-sizing: border-box;
+  background: var(--bg);
+}
+
+.present-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+}
+
+.present-header h1 {
+  margin: 4px 0;
+  font-size: 40px;
+}
+
+.present-selector {
+  margin-left: auto;
+}
+
+.present-main {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.present-section {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 28px;
+}
+
+.present-section h2 {
+  font-size: 24px;
+  margin-bottom: 18px;
+}
+
+.present-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.present-figure {
+  margin: 0;
+}
+
+.present-figure img {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  display: block;
+}
+
+.present-figure figcaption {
+  margin-top: 8px;
+  font-size: 14px;
+  color: var(--text);
+  text-align: center;
+}
