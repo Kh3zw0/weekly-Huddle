@@ -9,11 +9,23 @@ import AgendaReference from './AgendaReference'
 const emptyServiceDesk = Object.fromEntries(SERVICE_DESK_FIELDS.map((f) => [f.key, '']))
 const defaultL1Feedback = L1_FEEDBACK_AREAS.map((area) => ({ area, notes: '' }))
 
+const STEPS = [
+  { id: 'details', label: 'Report Details' },
+  { id: 'safety', label: 'Safety Cross' },
+  { id: 'checkin', label: 'Team Check-in' },
+  { id: 'servicedesk', label: 'Service Desk' },
+  { id: 'network', label: 'SLA & Network' },
+  { id: 'security', label: 'IT Security' },
+  { id: 'agenda', label: 'Agenda & Birthdays' },
+  { id: 'l1', label: 'L1 Feedback' },
+]
+
 function todayISO() {
   return new Date().toISOString().slice(0, 10)
 }
 
 export default function NewReportForm({ onSaved }) {
+  const [step, setStep] = useState(0)
   const [sites, setSites] = useState([])
   const [teamMembers, setTeamMembers] = useState([])
   const [reportDate, setReportDate] = useState(todayISO())
@@ -91,6 +103,19 @@ export default function NewReportForm({ onSaved }) {
     setL1Feedback((rows) => rows.filter((_, i) => i !== index))
   }
 
+  function goToStep(index) {
+    setStep(index)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  function goNext() {
+    goToStep(Math.min(step + 1, STEPS.length - 1))
+  }
+
+  function goBack() {
+    goToStep(Math.max(step - 1, 0))
+  }
+
   async function handleSubmit(e) {
     e.preventDefault()
     setError(null)
@@ -98,6 +123,7 @@ export default function NewReportForm({ onSaved }) {
 
     if (!periodStart || !periodEnd) {
       setError('Reporting period start and end dates are required.')
+      goToStep(0)
       return
     }
 
@@ -202,6 +228,7 @@ export default function NewReportForm({ onSaved }) {
       }
 
       setSuccess(true)
+      setStep(0)
       setReportDate(todayISO())
       setPeriodStart('')
       setPeriodEnd('')
@@ -227,14 +254,31 @@ export default function NewReportForm({ onSaved }) {
     }
   }
 
+  const isFirst = step === 0
+  const isLast = step === STEPS.length - 1
+  const currentId = STEPS[step].id
+
   return (
-    <>
-      <SafetyCrossSection />
+    <form className="huddle-form" onSubmit={handleSubmit}>
+      {error && <div className="banner banner-error">{error}</div>}
+      {success && <div className="banner banner-success">Huddle report saved.</div>}
 
-      <form className="huddle-form" onSubmit={handleSubmit}>
-        {error && <div className="banner banner-error">{error}</div>}
-        {success && <div className="banner banner-success">Huddle report saved.</div>}
+      <ol className="step-nav">
+        {STEPS.map((s, i) => (
+          <li key={s.id}>
+            <button
+              type="button"
+              className={i === step ? 'step-pill active' : i < step ? 'step-pill done' : 'step-pill'}
+              onClick={() => goToStep(i)}
+            >
+              <span className="step-index">{i + 1}</span>
+              {s.label}
+            </button>
+          </li>
+        ))}
+      </ol>
 
+      {currentId === 'details' && (
         <section className="card">
           <h2>Report Details</h2>
           <div className="grid grid-3">
@@ -256,9 +300,15 @@ export default function NewReportForm({ onSaved }) {
             <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
           </label>
         </section>
+      )}
 
+      {currentId === 'safety' && <SafetyCrossSection />}
+
+      {currentId === 'checkin' && (
         <TeamCheckinSection members={teamMembers} value={wellness} onChange={updateWellness} />
+      )}
 
+      {currentId === 'servicedesk' && (
         <section className="card">
           <h2>Service Desk Update</h2>
           <div className="grid grid-5">
@@ -275,159 +325,181 @@ export default function NewReportForm({ onSaved }) {
             ))}
           </div>
         </section>
+      )}
 
-        <section className="card">
-          <h2>Breached SLA by Technician</h2>
-          {breaches.map((row, i) => (
-            <div className="grid grid-inline" key={i}>
-              <input
-                placeholder="Technician name"
-                value={row.technician}
-                onChange={(e) => updateBreach(i, 'technician', e.target.value)}
-              />
-              <input
-                type="number"
-                min="0"
-                placeholder="Breaches"
-                value={row.breach_count}
-                onChange={(e) => updateBreach(i, 'breach_count', e.target.value)}
-              />
-              <button type="button" className="btn-ghost" onClick={() => removeBreachRow(i)}>
-                Remove
-              </button>
-            </div>
-          ))}
-          <button type="button" className="btn-secondary" onClick={addBreachRow}>
-            + Add technician
-          </button>
-        </section>
+      {currentId === 'network' && (
+        <>
+          <section className="card">
+            <h2>Breached SLA by Technician</h2>
+            {breaches.map((row, i) => (
+              <div className="grid grid-inline" key={i}>
+                <input
+                  placeholder="Technician name"
+                  value={row.technician}
+                  onChange={(e) => updateBreach(i, 'technician', e.target.value)}
+                />
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="Breaches"
+                  value={row.breach_count}
+                  onChange={(e) => updateBreach(i, 'breach_count', e.target.value)}
+                />
+                <button type="button" className="btn-ghost" onClick={() => removeBreachRow(i)}>
+                  Remove
+                </button>
+              </div>
+            ))}
+            <button type="button" className="btn-secondary" onClick={addBreachRow}>
+              + Add technician
+            </button>
+          </section>
 
-        <section className="card">
-          <h2>Network Availability</h2>
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Site</th>
-                <th>Inter-Site Connectivity %</th>
-                <th>Direct Internet Access %</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sites.map((site) => (
-                <tr key={site.id}>
-                  <td>{site.name}</td>
-                  <td>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      max="100"
-                      value={network[site.id]?.inter_site ?? ''}
-                      onChange={(e) => updateNetwork(site.id, 'inter_site', e.target.value)}
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      max="100"
-                      value={network[site.id]?.internet ?? ''}
-                      onChange={(e) => updateNetwork(site.id, 'internet', e.target.value)}
-                    />
-                  </td>
+          <section className="card">
+            <h2>Network Availability</h2>
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Site</th>
+                  <th>Inter-Site Connectivity %</th>
+                  <th>Direct Internet Access %</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
+              </thead>
+              <tbody>
+                {sites.map((site) => (
+                  <tr key={site.id}>
+                    <td>{site.name}</td>
+                    <td>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        value={network[site.id]?.inter_site ?? ''}
+                        onChange={(e) => updateNetwork(site.id, 'inter_site', e.target.value)}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        value={network[site.id]?.internet ?? ''}
+                        onChange={(e) => updateNetwork(site.id, 'internet', e.target.value)}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+        </>
+      )}
 
-        <section className="card">
-          <h2>IT Security Update &mdash; Phishing Simulation</h2>
-          <div className="grid grid-3">
-            <label>
-              Campaign Name
-              <input
-                value={phishing.campaign_name}
-                onChange={(e) => setPhishing((p) => ({ ...p, campaign_name: e.target.value }))}
-              />
-            </label>
-            <label>
-              Link Clicked
-              <input
-                type="number"
-                min="0"
-                value={phishing.link_clicked}
-                onChange={(e) => setPhishing((p) => ({ ...p, link_clicked: e.target.value }))}
-              />
-            </label>
-            <label>
-              Credentials Entered
-              <input
-                type="number"
-                min="0"
-                value={phishing.credentials_entered}
-                onChange={(e) => setPhishing((p) => ({ ...p, credentials_entered: e.target.value }))}
-              />
-            </label>
-            <label>
-              Not Compromised
-              <input
-                type="number"
-                min="0"
-                value={phishing.not_compromised}
-                onChange={(e) => setPhishing((p) => ({ ...p, not_compromised: e.target.value }))}
-              />
-            </label>
-            <label>
-              Phish Prone %
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                max="100"
-                value={phishing.phish_prone_pct}
-                onChange={(e) => setPhishing((p) => ({ ...p, phish_prone_pct: e.target.value }))}
-              />
-            </label>
-          </div>
-        </section>
-
-        <section className="card">
-          <h2>Cyber Safe Campaign</h2>
-          {CYBER_SAFE_CATEGORIES.map((c) => (
-            <div className="grid grid-inline" key={c}>
-              <span className="cyber-label">{c}</span>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                max="100"
-                placeholder="Score %"
-                value={cyberSafe[c].score}
-                onChange={(e) =>
-                  setCyberSafe((s) => ({ ...s, [c]: { ...s[c], score: e.target.value } }))
-                }
-              />
-              <input
-                placeholder="Notes"
-                value={cyberSafe[c].notes}
-                onChange={(e) =>
-                  setCyberSafe((s) => ({ ...s, [c]: { ...s[c], notes: e.target.value } }))
-                }
-              />
+      {currentId === 'security' && (
+        <>
+          <section className="card">
+            <h2>IT Security Update &mdash; Phishing Simulation</h2>
+            <div className="grid grid-3">
+              <label>
+                Campaign Name
+                <input
+                  value={phishing.campaign_name}
+                  onChange={(e) => setPhishing((p) => ({ ...p, campaign_name: e.target.value }))}
+                />
+              </label>
+              <label>
+                Link Clicked
+                <input
+                  type="number"
+                  min="0"
+                  value={phishing.link_clicked}
+                  onChange={(e) => setPhishing((p) => ({ ...p, link_clicked: e.target.value }))}
+                />
+              </label>
+              <label>
+                Credentials Entered
+                <input
+                  type="number"
+                  min="0"
+                  value={phishing.credentials_entered}
+                  onChange={(e) => setPhishing((p) => ({ ...p, credentials_entered: e.target.value }))}
+                />
+              </label>
+              <label>
+                Not Compromised
+                <input
+                  type="number"
+                  min="0"
+                  value={phishing.not_compromised}
+                  onChange={(e) => setPhishing((p) => ({ ...p, not_compromised: e.target.value }))}
+                />
+              </label>
+              <label>
+                Phish Prone %
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  value={phishing.phish_prone_pct}
+                  onChange={(e) => setPhishing((p) => ({ ...p, phish_prone_pct: e.target.value }))}
+                />
+              </label>
             </div>
-          ))}
-        </section>
+          </section>
 
-        <AgendaReference />
+          <section className="card">
+            <h2>Cyber Safe Campaign</h2>
+            {CYBER_SAFE_CATEGORIES.map((c) => (
+              <div className="grid grid-inline" key={c}>
+                <span className="cyber-label">{c}</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  placeholder="Score %"
+                  value={cyberSafe[c].score}
+                  onChange={(e) =>
+                    setCyberSafe((s) => ({ ...s, [c]: { ...s[c], score: e.target.value } }))
+                  }
+                />
+                <input
+                  placeholder="Notes"
+                  value={cyberSafe[c].notes}
+                  onChange={(e) =>
+                    setCyberSafe((s) => ({ ...s, [c]: { ...s[c], notes: e.target.value } }))
+                  }
+                />
+              </div>
+            ))}
+          </section>
+        </>
+      )}
 
+      {currentId === 'agenda' && <AgendaReference />}
+
+      {currentId === 'l1' && (
         <L1FeedbackSection rows={l1Feedback} onChange={updateL1} onAdd={addL1Row} onRemove={removeL1Row} />
+      )}
 
-        <button type="submit" className="btn-primary" disabled={saving}>
-          {saving ? 'Saving…' : 'Save Huddle Report'}
+      <div className="step-controls">
+        <button type="button" className="btn-secondary" onClick={goBack} disabled={isFirst}>
+          &larr; Back
         </button>
-      </form>
-    </>
+        {!isLast && (
+          <button type="button" className="btn-primary" onClick={goNext}>
+            Next &rarr;
+          </button>
+        )}
+        {isLast && (
+          <button type="submit" className="btn-primary" disabled={saving}>
+            {saving ? 'Saving…' : 'Save Huddle Report'}
+          </button>
+        )}
+      </div>
+    </form>
   )
 }
